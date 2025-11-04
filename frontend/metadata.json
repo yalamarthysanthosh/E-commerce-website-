@@ -1,0 +1,5 @@
+{
+  "name": "AcousticX 3D Product Viewer",
+  "description": "An interactive 3D product viewer for AcousticX headphones, featuring a dynamic background that responds to cursor movement.",
+  "requestFramePermissions": []
+}
