@@ -14,8 +14,13 @@ In your Render dashboard, create a new "Web Service" and connect it to your GitH
 
 Render will detect that this is a Node.js project. Configure the build and start commands as follows:
 
+- **Root Directory**: `backend` (This tells Render to run commands from this folder)
 - **Build Command**: `npm install`
-- **Start Command**: `node backend/server.js`
+- **Start Command**: `node server.js`
+
+Alternatively, leave the Root Directory blank and use these commands:
+- **Build Command**: `cd backend && npm install`
+- **Start Command**: `cd backend && node server.js`
 
 **Note**: Ensure your `package.json` includes `"type": "module"` to support ES Module syntax.
 
