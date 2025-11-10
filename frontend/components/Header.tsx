@@ -47,6 +47,12 @@ const Header: React.FC<HeaderProps> = ({ navigateTo }) => {
             <CartIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
             <span className="hidden md:block">Cart</span>
           </button>
+          <button
+            onClick={() => addToast('Seller registration is coming soon!', { emoji: '👨‍💻' })}
+            className="hidden md:flex items-center space-x-2 text-slate-200 font-bold hover:text-cyan-400 transition-colors group">
+            <MoreIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
+            <span className="hidden lg:block">Become a Seller</span>
+          </button>
         </div>
       </div>
        <div className="sm:hidden px-4 pb-2">

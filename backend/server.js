@@ -13,36 +13,64 @@ import orderRoutes from './routes/orderRoutes.js';
 dotenv.config();
 
 const port = process.env.PORT || 5000;
-
 connectDB();
 
 const app = express();
 
-// CORS Configuration for Render
-const corsOptions = {
-  origin: [process.env.FRONTEND_URL, 'https://e-commerce-website-ilk7.onrender.com'],
-  credentials: true,
-};
-app.use(cors(corsOptions));
+// ✅ Allowed Origins
+const allowedOrigins = [
+  process.env.FRONTEND_URL, // Render frontend
+  'http://localhost:3000',  // Local dev
+  'https://e-commerce-website-zxn0.onrender.com', // Backend self
+];
 
-// Body parser middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ✅ Fixed CORS configuration
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
 
-// Cookie parser middleware
-app.use(cookieParser());
-
-app.get('/', (req, res) => {
-  res.send('API is running...');
+  // Handle preflight requests manually
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
 });
 
-// Mount Routers
+// ✅ Backup cors() for dynamic origin handling
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log('❌ Blocked by CORS:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
+
+// ✅ Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.get('/', (req, res) => res.send('API is running... ✅'));
+
+// ✅ Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 
+// ✅ Error Handling
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.listen(port, () => console.log(`🚀 Server running on port ${port}`));

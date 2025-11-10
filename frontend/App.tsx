@@ -11,6 +11,7 @@ import LoginPage from './components/LoginPage';
 import BackgroundAnimation from './components/BackgroundAnimation';
 import HomePage from './components/HomePage';
 import LoadingScreen from './components/LoadingScreen';
+import { addToCart as addToCartAPI } from './api/cart';
 // FIX: Update import path for toast components to resolve file casing conflict.
 import { ToastProvider, useToast } from './components/ToastContainer';
 
@@ -47,22 +48,29 @@ const AppContent: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const handleAddToCart = (productToAdd: Product, color: string) => {
-    setCart(prevCart => {
-      const existingItemIndex = prevCart.findIndex(
-        item => item.product.id === productToAdd.id && item.color === color
+  const handleAddToCart = async (productToAdd: Product, color: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to add items to your cart.');
+      navigateTo('login');
+      return;
+    }
+    try {
+      const updatedCart = await addToCartAPI(
+        {
+          productId: productToAdd.id,
+          color: color,
+          quantity: 1, // Assuming we add one at a time
+        },
+        token,
       );
-
-      if (existingItemIndex > -1) {
-        const updatedCart = [...prevCart];
-        updatedCart[existingItemIndex].quantity += 1;
-        return updatedCart;
-      } else {
-        return [...prevCart, { product: productToAdd, quantity: 1, color }];
-      }
-    });
-    addToast('Added to cart!', { type: 'success', emoji: '🛒' });
-    navigateTo('cart');
+      setCart(updatedCart);
+      addToast('Added to cart!', { type: 'success', emoji: '🛒' });
+      navigateTo('cart');
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+      addToast('Failed to add item to cart.', { type: 'error' });
+    }
   };
 
   const handleCartUpdate = (productId: string, color: string, newQuantity: number) => {
@@ -145,9 +153,7 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      {currentPage === 'login' ? (
-        <LoginPage navigateTo={navigateTo} />
-      ) : (
+      {currentPage !== 'login' && (
         <div className="bg-slate-900 min-h-screen font-sans text-slate-200">
           <CursorFollower />
           <BackgroundAnimation />
@@ -156,6 +162,9 @@ const AppContent: React.FC = () => {
             {renderPage()}
           </main>
         </div>
+      )}
+      {currentPage === 'login' && (
+        <LoginPage navigateTo={navigateTo} />
       )}
     </>
   );

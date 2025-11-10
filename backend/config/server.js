@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import connectDB from './config/db.js';
+import connectDB from './db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 import authRoutes from './routes/authRoutes.js';
@@ -18,12 +18,21 @@ connectDB();
 
 const app = express();
 
-// CORS Configuration for Render
-const corsOptions = {
-  origin: [process.env.FRONTEND_URL, 'https://e-commerce-website-ilk7.onrender.com'],
-  credentials: true,
-};
-app.use(cors(corsOptions));
+// CORS Configuration
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      const allowedOrigins = [process.env.FRONTEND_URL, 'http://localhost:3000', 'https://your-frontend-domain.com'];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  })
+);
 
 // Body parser middleware
 app.use(express.json());

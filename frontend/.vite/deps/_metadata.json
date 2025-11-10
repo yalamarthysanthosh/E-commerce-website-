@@ -1,0 +1,46 @@
+{
+  "hash": "43c53f43",
+  "configHash": "26cde9c6",
+  "lockfileHash": "061d81aa",
+  "browserHash": "c2dd0673",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "aa0b5478",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "43435f13",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "0b6adfdd",
+      "needsInterop": true
+    },
+    "gsap": {
+      "src": "../../node_modules/gsap/index.js",
+      "file": "gsap.js",
+      "fileHash": "25aff7df",
+      "needsInterop": false
+    },
+    "gsap/DrawSVGPlugin": {
+      "src": "../../node_modules/gsap/DrawSVGPlugin.js",
+      "file": "gsap_DrawSVGPlugin.js",
+      "fileHash": "17ea5015",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-J6KE6MJH": {
+      "file": "chunk-J6KE6MJH.js"
+    },
+    "chunk-BUSYA2B4": {
+      "file": "chunk-BUSYA2B4.js"
+    }
+  }
+}

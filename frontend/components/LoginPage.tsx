@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import gsap from 'gsap';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
 import type { Page } from '../App';
+import { loginUser, registerUser } from '../api/auth.ts';
 
 gsap.registerPlugin(DrawSVGPlugin);
 
@@ -10,19 +11,54 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ navigateTo }) => {
-  const [formType, setFormType] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [isRegister, setIsRegister] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const result = await loginUser({ email, password });
+      localStorage.setItem('token', result.token);
+      navigateTo('home');
+    } catch (err) {
+      console.error(err);
+      alert('Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name) {
+      alert('Please enter your name.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await registerUser({ name, email, password });
+      // Automatically log in after successful registration
+      const result = await loginUser({ email, password });
+      localStorage.setItem('token', result.token);
+      navigateTo('home');
+    } catch (err) {
+      console.error(err);
+      const errorMessage = (err as Error).message || 'Registration failed. The user may already exist.';
+      alert(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
-    const loginForm = document.getElementById('login-form');
 
-    if (!usernameInput || !passwordInput || !loginForm) return;
+    if (!usernameInput || !passwordInput) return;
 
     // --- Bongo Cat Animation ---
     const ID = "bongo-cat";
@@ -88,34 +124,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigateTo }) => {
             const pawUp = tapState === 0 ? pawLeftUp : pawRightUp;
             const pawDown = tapState === 0 ? pawLeftDown : pawRightDown;
             
-            gsap.timeline({ onComplete: () => { isTyping = false; } })
-                .to(pawDown, { autoAlpha: 0, duration: 0.05 })
-                .to(pawUp, { autoAlpha: 1, duration: 0.05 })
-                .to(pawUp, { autoAlpha: 0, duration: 0.05 }, '+=0.1')
-                .to(pawDown, { autoAlpha: 1, duration: 0.05 });
+            gsap.timeline({ onComplete: () => isTyping = false })
+                .set(pawDown, { autoAlpha: 0 })
+                .set(pawUp, { autoAlpha: 1 }, '+=0')
+                .set(pawUp, { autoAlpha: 0 }, '+=0.1')
+                .set(pawDown, { autoAlpha: 1 }, '+=0');
             
             tapState = 1 - tapState;
         };
 
         usernameInput!.addEventListener('keydown', onKeyDown);
         passwordInput!.addEventListener('keydown', onKeyDown);
-
-        // Also attach the keydown listener to the email input if it exists
-        const emailInput = document.getElementById('email');
-        if (emailInput) {
-            emailInput.addEventListener('keydown', onKeyDown);
-        }
     };
-
-    // This function attaches the typing animation to all relevant inputs.
-    // It needs to be re-run when the form type changes.
-    const attachTypingListeners = () => {
-        const emailInput = document.getElementById('email');
-        if (emailInput) {
-            emailInput.addEventListener('focus', startTyping, { once: true });
-        }
-    };
-    attachTypingListeners();
 
     usernameInput.addEventListener('focus', startTyping, { once: true });
     passwordInput.addEventListener('focus', startTyping, { once: true });
@@ -172,54 +192,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigateTo }) => {
 
     // Cleanup function
     return () => {
-        mainTimeline.kill();
-        wavingTimeline.kill();
-        gsap.killTweensOf('.terminal-code line');
+      // Kill all GSAP animations to prevent memory leaks
+      mainTimeline.kill();
+      wavingTimeline.kill();
+      gsap.killTweensOf('.terminal-code line');
     };
-  }, [navigateTo, formType]); // Re-run useEffect when formType changes
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    try {
-      // This is where you would make the API request to your backend.
-      // The URL '/api/login' is a placeholder for your actual backend endpoint.
-      const response = await fetch(formType === 'login' ? '/api/login' : '/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(
-          formType === 'login'
-            ? { username, password }
-            : { email, username, password }
-        ),
-      });
-
-      if (response.ok) {
-        // If the login is successful (e.g., status 200), navigate to the home page.
-        if (formType === 'login') {
-          // Your backend might also send back a token to store here.
-          navigateTo('home');
-        } else {
-          // On successful registration, switch to login view with a success message
-          setFormType('login');
-          setError('Registration successful! Please log in.');
-        }
-      } else {
-        // If the server returns an error status (401, 403, etc.), handle it.
-        const errorData = await response.json();
-        setError(errorData.message || (formType === 'login' ? 'Invalid username or password.' : 'Registration failed.'));
-      }
-    } catch (err) {
-      // Handle network errors or other issues with the fetch call.
-      setError('Failed to connect to the server. Please try again later.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, []);
 
   return (
     <div style={{
@@ -231,34 +209,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigateTo }) => {
         <style>{`
             .login-container {
                 background: #2d3748;
-                position: relative;
                 padding: 2.5rem;
-                padding-bottom: 1.5rem;
                 border-radius: 12px;
                 box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
                 width: 350px;
                 text-align: center;
                 color: #f7fafc;
-            }
-            .error-message {
-                color: #f56565; /* red-500 */
-                background-color: rgba(255, 0, 0, 0.1);
-                border: 1px solid #f56565;
-                border-radius: 8px;
-                padding: 0.75rem;
-                margin-bottom: 1.5rem;
-            }
-            .form-switcher {
-                margin-top: 1.5rem;
-                font-size: 0.875rem;
-            }
-            .form-switcher button {
-                background: none;
-                border: none;
-                color: #63b3ed; /* blue-400 */
-                text-decoration: underline;
-                cursor: pointer;
-                padding: 0;
             }
             .bongo-cat-container {
                 width: 100%;
@@ -426,65 +382,55 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigateTo }) => {
                 </svg>
             </div>
 
-            {error && <div className="error-message">{error}</div>}
-
-            <form id="login-form" onSubmit={handleSubmit}>
-                {formType === 'register' && (
+            <form id="login-form" onSubmit={isRegister ? handleRegister : handleLogin}>
+                {isRegister && (
                     <div className="input-group">
-                        <label htmlFor="email">Email</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
+                        <label htmlFor="name">Name</label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required 
                         />
                     </div>
                 )}
-                 <div className="input-group">
-                     <label htmlFor="username">Username</label>
-                     <input
-                         type="text"
-                         id="username"
-                         name="username"
-                         value={username}
-                         onChange={(e) => setUsername(e.target.value)}
-                         required
-                     />
-                 </div>
-                 <div className="input-group">
-                     <label htmlFor="password">Password</label>
-                     <input
-                         type="password"
-                         id="password"
-                         name="password"
-                         value={password}
-                         onChange={(e) => setPassword(e.target.value)}
-                         required
-                     />
-                 </div>
-                 <button type="submit" id="login-btn" disabled={isLoading}>
-                     {isLoading
-                         ? 'Processing...'
-                         : formType === 'login'
-                         ? 'Login'
-                         : 'Register'}
-                 </button>
+                <div className="input-group">
+                    <label htmlFor="username">Email</label>
+                    <input 
+                        type="email" 
+                        id="username" 
+                        name="username" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required 
+                    />
+                </div>
+                <div className="input-group">
+                    <label htmlFor="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required 
+                    />
+                </div>
+                <button type="submit" id="login-btn" disabled={isLoading}>
+                    {isLoading 
+                        ? (isRegister ? 'Registering...' : 'Logging in...') 
+                        : (isRegister ? 'Register' : 'Login')}
+                </button>
             </form>
-
-            <div className="form-switcher">
-                {formType === 'login' ? (
-                    <span>
-                        Don't have an account?{' '}
-                        <button onClick={() => { setFormType('register'); setError(''); }}>Register</button>
-                    </span>
-                ) : (
-                    <span>
-                        Already have an account?{' '}
-                        <button onClick={() => { setFormType('login'); setError(''); }}>Login</button>
-                    </span>
-                )}
+            <div style={{ marginTop: '1rem', fontSize: '0.9rem' }}>
+                <button 
+                    onClick={() => setIsRegister(!isRegister)}
+                    style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                    {isRegister ? 'Already have an account? Login' : "Don't have an account? Register"}
+                </button>
             </div>
         </div>
     </div>
