@@ -1,19 +1,29 @@
 import express from 'express';
-const router = express.Router();
-import {
-  addOrderItems,
-  getMyOrders,
-  getOrderById,
-  updateOrderToPaid,
-  updateOrderToDelivered,
-  getOrders,
-} from '../controllers/orderController.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
+import Order from '../models/orderModel.js';
+import { protect } from '../middleware/authMiddleware.js';
 
-router.route('/').post(protect, addOrderItems).get(protect, admin, getOrders);
-router.route('/myorders').get(protect, getMyOrders);
-router.route('/:id').get(protect, getOrderById);
-router.route('/:id/pay').put(protect, updateOrderToPaid);
-router.route('/:id/deliver').put(protect, admin, updateOrderToDelivered);
+const router = express.Router();
+
+// Save order
+router.post('/', protect, async (req, res) => {
+  try {
+    const { items, totalAmount } = req.body;
+    const order = await Order.create({
+      userId: req.user._id,
+      items,
+      totalAmount,
+    });
+    res.status(201).json(order);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Order creation failed' });
+  }
+});
+
+// Get user orders
+router.get('/', protect, async (req, res) => {
+  const orders = await Order.find({ userId: req.user._id });
+  res.json(orders);
+});
 
 export default router;
