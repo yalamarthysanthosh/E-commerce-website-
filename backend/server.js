@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -13,36 +14,36 @@ import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 
 dotenv.config();
-
-const port = process.env.PORT || 5000;
 connectDB();
 
-const app = express();
+mongoose.connection.once('open', () => {
+  console.log(`✅ Connected to MongoDB Database: ${mongoose.connection.name}`);
+});
 
-// ✅ CORS Setup
+const app = express();
+const port = process.env.PORT || 5000;
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'http://localhost:3000',
+  'http://localhost:3000', // Kept for consistency
+  'http://localhost:3001', // Added your current frontend origin
   'https://e-commerce-website-zxn0.onrender.com',
   'https://e-commerce-website-frontend.onrender.com',
 ];
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  next();
-});
+// ✅ Using the cors package for cleaner CORS handling
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// ✅ Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);

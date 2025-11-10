@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import gsap from 'gsap';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
 import type { Page } from '../App';
-import { loginUser, registerUser } from '../api/auth.ts';
+import { loginUser, registerUser } from '../api_auth.ts';
 
 gsap.registerPlugin(DrawSVGPlugin);
 
@@ -21,12 +21,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigateTo }) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const result = await loginUser({ email, password });
-      localStorage.setItem('token', result.token);
+      // The result is now the user object, not an object containing a token.
+      const user = await loginUser({ email, password });
+      localStorage.setItem('user', JSON.stringify(user));
       navigateTo('home');
     } catch (err) {
-      console.error(err);
-      alert('Login failed. Please check your credentials.');
+      const errorMessage = (err as Error).message || 'Login failed. Please check your credentials.';
+      console.error("Login Error:", err);
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -40,14 +42,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigateTo }) => {
     }
     setIsLoading(true);
     try {
-      await registerUser({ name, email, password });
-      // Automatically log in after successful registration
-      const result = await loginUser({ email, password });
-      localStorage.setItem('token', result.token);
+      // The registerUser function now also returns the user object and sets the cookie.
+      // No need to log in separately.
+      const user = await registerUser({ name, email, password });
+      localStorage.setItem('user', JSON.stringify(user));
       navigateTo('home');
     } catch (err) {
-      console.error(err);
-      const errorMessage = (err as Error).message || 'Registration failed. The user may already exist.';
+      // The backend sends a specific message, let's display it.
+      const errorMessage = (err as Error).message || 'Registration failed.';
+      console.error("Registration Error:", err);
       alert(errorMessage);
     } finally {
       setIsLoading(false);
