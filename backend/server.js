@@ -16,8 +16,11 @@ import orderRoutes from './routes/orderRoutes.js';
 dotenv.config();
 connectDB();
 
-mongoose.connection.once('open', () => {
-  console.log(`✅ Connected to MongoDB Database: ${mongoose.connection.name}`);
+mongoose.connection.on('connected', () => {
+  console.log(`✅ MongoDB connected to: ${mongoose.connection.name}`);
+});
+mongoose.connection.on('error', err => {
+  console.error(`❌ MongoDB connection error: ${err}`);
 });
 
 const app = express();
