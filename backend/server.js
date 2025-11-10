@@ -49,14 +49,16 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 
-// ✅ Serve frontend build in production
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  // The frontend build folder is expected to be in `../frontend/dist`
+  const frontendDistPath = path.resolve(__dirname, '../frontend/dist');
+  app.use(express.static(frontendDistPath));
+
+  // For any other request, serve the index.html file
   app.get('*', (req, res) =>
-    res.sendFile(path.resolve(__dirname, '../frontend/dist', 'index.html'))
+    res.sendFile(path.resolve(frontendDistPath, 'index.html'))
   );
 }
 
