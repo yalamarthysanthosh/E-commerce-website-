@@ -108,7 +108,7 @@ const ProductViewer: React.FC<ProductViewerProps> = ({ images, selectedColor, on
     >
       {isLoading ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-transparent rounded-md">
-           <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-cyan-400"></div>
+           <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-cyan-400" role="status"></div>
            <p className="mt-4 text-slate-200">Loading 3D View...</p>
         </div>
       ) : (

@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: ecommerce-backend
+    env: node
+    repo: https://github.com/your-username/your-repo-name # TODO: Replace with your repository URL
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm run start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false # Keep this secret
+      - key: JWT_SECRET
+        sync: false # Keep this secret
+      - key: DEBUG_VIEW_KEY
+        sync: false # Keep this secret
+    autoDeploy: true
+    plan: free
+
+  - type: web
+    name: ecommerce-frontend
+    env: static
+    repo: https://github.com/your-username/your-repo-name # TODO: Replace with your repository URL
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: ecommerce-backend
+          type: web
+          property: url
+      - key: VITE_APP_NAME
+        value: "E-Commerce Website"
+    plan: free

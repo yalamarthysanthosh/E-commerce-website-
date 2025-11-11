@@ -1,14 +1,20 @@
-import React from 'react';
-import { SearchIcon, UserIcon, CartIcon, MoreIcon } from './Icons';
+import React, { useEffect, useState } from 'react';
+import { SearchIcon, UserIcon, CartIcon } from './Icons';
 import type { Page } from '../App';
-import { useToast } from './ToastContainer';
 
 interface HeaderProps {
   navigateTo: (page: Page) => void;
+  isLoggedIn: boolean;
+  onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ navigateTo }) => {
-  const { addToast } = useToast();
+const Header: React.FC<HeaderProps> = ({ navigateTo, isLoggedIn, onLogout }) => {
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    onLogout();
+    navigateTo('login');
+  };
 
   return (
     <header className="bg-slate-900/70 backdrop-blur-md shadow-lg sticky top-0 z-10 border-b border-cyan-500/20">
@@ -33,25 +39,24 @@ const Header: React.FC<HeaderProps> = ({ navigateTo }) => {
 
         {/* Action Buttons */}
         <div className="flex items-center space-x-4 md:space-x-8">
-          <button 
-            className="hidden md:flex items-center space-x-2 bg-cyan-500 text-white font-bold py-2 px-4 rounded-sm text-sm hover:bg-cyan-600 transition-colors group"
-            onClick={() => navigateTo('login')}
-          >
-            <UserIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
-            <span>Login</span>
-          </button>
+          {isLoggedIn ? (
+            <button onClick={handleLogout} className="hidden md:flex items-center space-x-2 bg-red-500 text-white font-bold py-2 px-4 rounded-sm text-sm hover:bg-red-600 transition-colors group">
+              <UserIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
+              <span>Logout</span>
+            </button>
+          ) : (
+            <button onClick={() => navigateTo('login')} className="hidden md:flex items-center space-x-2 bg-cyan-500 text-white font-bold py-2 px-4 rounded-sm text-sm hover:bg-cyan-600 transition-colors group">
+              <UserIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
+              <span>Login</span>
+            </button>
+          )}
+
           <button 
             className="flex items-center space-x-2 text-slate-200 font-bold hover:text-cyan-400 transition-colors group"
             onClick={() => navigateTo('cart')}
           >
             <CartIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
             <span className="hidden md:block">Cart</span>
-          </button>
-          <button
-            onClick={() => addToast('Seller registration is coming soon!', { emoji: '👨‍💻' })}
-            className="hidden md:flex items-center space-x-2 text-slate-200 font-bold hover:text-cyan-400 transition-colors group">
-            <MoreIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
-            <span className="hidden lg:block">Become a Seller</span>
           </button>
         </div>
       </div>

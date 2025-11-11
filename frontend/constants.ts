@@ -1,4 +1,6 @@
-
+import headphone from "./photos/headphone.jpg";
+import earphones from "./photos/earphones.jpg";
+import speaker from "./photos/speaker.png";
 export interface Product {
   id: string;
   name: string;
@@ -18,15 +20,23 @@ export interface Product {
 }
 
 // Generates an array of image URLs for the 360 viewer.
-// Images from: https://img-seq.netlify.app/
-const generateImageUrls = (count: number): string[] => {
+const generateAirpodsMaxImageUrls = (count: number): string[] => {
   return Array.from({ length: count }, (_, i) => {
     const frame = String(i + 1).padStart(4, '0');
     return `https://www.apple.com/105/media/us/airpods-max/2020/996b980b-3134-43f3-ad73-fe80f27ba0d9/anim/turn/large/large_${frame}.jpg`;
   });
 };
 
-const headphoneImages: string[] = generateImageUrls(70); // 70 frames for a smoother rotation
+const generateJblSpeakerImageUrls = (count: number): string[] => {
+  return Array.from({ length: count }, (_, i) => {
+    const frame = String(i).padStart(3, '0');
+    return `https://img-seq.netlify.app/jbl-speaker/jbl_speaker_${frame}.png`;
+  });
+};
+
+const headphoneImages: string[] = [headphone, ...generateAirpodsMaxImageUrls(69)];
+const speakerImages: string[] = [speaker, ...generateJblSpeakerImageUrls(59)];
+const earbudsImage: string[] = [earphones];
 
 export const products: Product[] = [
   {
@@ -54,16 +64,16 @@ export const products: Product[] = [
     description: 'AcousticX Studio Pro brings immersive sound right to your ears. Its custom acoustic platform delivers powerful, balanced sound. When you want to silence distractions, Active Noise Cancellation blocks external noise for immersive sound. With up to 40 hours of listening time, you can keep the music going. And if you need a little extra juice, 5-minute Fast Fuel charging gives 4 hours of playback.',
     colors: ['Space Gray', 'Silver', 'Sky Blue', 'Green', 'Pink'],
     sizes: ['One Size'],
-    thumbnail: headphoneImages[0],
+    thumbnail: headphone,
     images: headphoneImages,
   },
   {
     id: 'P002',
-    name: 'SoundSphere 360 Portable Speaker',
+    name: 'EchoMax Speaker',
     brand: 'AcousticX',
     rating: 4.8,
     reviews: 9820,
-    price: 12999,
+    price: 15999,
     originalPrice: 18900,
     discount: 31,
     offers: [
@@ -81,16 +91,16 @@ export const products: Product[] = [
     description: 'Take the party anywhere with the SoundSphere 360. This portable Bluetooth speaker delivers shockingly powerful 360-degree sound. It\'s waterproof, dustproof, and ready for any adventure.',
     colors: ['Midnight Black', 'Ocean Blue', 'Sunset Red'],
     sizes: ['One Size'],
-    thumbnail: 'https://www.jbl.com/dw/image/v2/BFND_PRD/on/demandware.static/-/Sites-master-catalog/default/dw1e8b9580/JBL_Flip6_Lifestyle_1.png?sw=537&sfrm=png',
-    images: headphoneImages, // Note: Reusing 3D model for demo purposes
+    thumbnail: speaker,
+    images: speakerImages,
   },
   {
     id: 'P003',
-    name: 'Aura Buds Pro',
+    name: 'AirLite Earphones',
     brand: 'AcousticX',
     rating: 4.5,
     reviews: 12550,
-    price: 8999,
+    price: 9999,
     originalPrice: 12900,
     discount: 30,
     offers: [
@@ -108,7 +118,7 @@ export const products: Product[] = [
     description: 'Immerse yourself in your world with Aura Buds Pro. Featuring Intelligent ANC and a comfortable fit, they offer a premium listening experience. The 3-mic system ensures your calls are always crystal clear.',
     colors: ['Graphite', 'White', 'Violet'],
     sizes: ['One Size'],
-    thumbnail: 'https://images.samsung.com/is/image/samsung/p6pim/in/sm-r510nlvainu/gallery/in-galaxy-buds2-pro-r510-sm-r510nlvainu-533190435?$650_519_PNG$',
-    images: headphoneImages, // Note: Reusing 3D model for demo purposes
+    thumbnail: earphones,
+    images: earbudsImage,
   }
 ];

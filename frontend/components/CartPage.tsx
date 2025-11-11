@@ -3,6 +3,7 @@ import React from 'react';
 import type { Page, CartItem } from '../App';
 import { ChevronLeftIcon, TrashIcon } from './Icons';
 import { useToast } from './ToastContainer';
+import { placeOrder } from '../api/orderApi';
 
 interface CartPageProps {
   navigateTo: (page: Page, productId?: string) => void;
@@ -12,13 +13,33 @@ interface CartPageProps {
 
 const CartPage: React.FC<CartPageProps> = ({ navigateTo, cart, onCartUpdate }) => {
   const { addToast } = useToast();
+  const [isPlacingOrder, setIsPlacingOrder] = React.useState(false);
 
   const shippingCost = cart.length > 0 ? 99 : 0;
   const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const total = subtotal + shippingCost;
 
-  const handleCheckout = () => {
-    addToast("Order placed! Your gear is on its way.", { type: 'success', emoji: '🚀' });
+  const handleCheckout = async () => {
+    setIsPlacingOrder(true);
+    try {
+      const orderItems = cart.map(item => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        price: item.product.price,
+        color: item.color,
+      }));
+
+      await placeOrder({ items: orderItems, totalAmount: total });
+
+      addToast("Order placed! Your gear is on its way.", { type: 'success', emoji: '🚀' });
+      // Clear the cart by setting all quantities to 0
+      cart.forEach(item => onCartUpdate(item.product.id, item.color, 0));
+    } catch (error) {
+      addToast("Failed to place order. Please try again.", { type: 'error' });
+      console.error("Checkout error:", error);
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
   
   const handleRemoveItem = (productId: string, color: string) => {
@@ -96,9 +117,9 @@ const CartPage: React.FC<CartPageProps> = ({ navigateTo, cart, onCartUpdate }) =
                 </div>
                 <button 
                   onClick={handleCheckout}
-                  disabled={cart.length === 0}
+                  disabled={cart.length === 0 || isPlacingOrder}
                   className="w-full mt-6 py-3 text-lg font-bold bg-fuchsia-600 text-white rounded-md shadow-md hover:bg-fuchsia-700 transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed">
-                    Proceed to Checkout
+                    {isPlacingOrder ? 'Placing Order...' : 'Proceed to Checkout'}
                 </button>
             </div>
         </div>

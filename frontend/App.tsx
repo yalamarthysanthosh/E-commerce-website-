@@ -6,17 +6,17 @@ import ProductDetails from './components/ProductDetails';
 import { products as allProducts, Product } from './constants';
 import { BoltIcon, CartIcon } from './components/Icons';
 import CursorFollower from './components/CursorFollower';
-import CartPage from './components/CartPage';
-import LoginPage from './components/LoginPage';
+import CartPage from './components/CartPage'; 
 import BackgroundAnimation from './components/BackgroundAnimation';
 import HomePage from './components/HomePage';
 import LoadingScreen from './components/LoadingScreen';
-import { addToCart as addToCartAPI } from './api/cart';
 // FIX: Update import path for toast components to resolve file casing conflict.
 import { ToastProvider, useToast } from './components/ToastContainer';
+import BongoCatLoginPage from './components/BongoCatLoginPage';
+import BongoCatRegisterPage from './components/BongoCatRegisterPage';
 
 
-export type Page = 'home' | 'product' | 'cart' | 'login';
+export type Page = 'home' | 'product' | 'cart' | 'login' | 'register';
 
 export interface CartItem {
   product: Product;
@@ -29,13 +29,22 @@ const AppContent: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [isAppLoading, setIsAppLoading] = useState(true);
+  const [isInitialAppLoad, setIsInitialAppLoad] = useState(true);
+  const [isProductLoading, setIsProductLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const { addToast } = useToast();
 
   const selectedProduct = allProducts.find(p => p.id === selectedProductId);
 
   useEffect(() => {
-    // When the selected product changes, reset the color to its first available color.
+    // Check login status on initial load
+    const user = localStorage.getItem("user");
+    if (user) {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  useEffect(() => {
     if (selectedProduct) {
       setSelectedColor(selectedProduct.colors[0]);
     }
@@ -43,34 +52,28 @@ const AppContent: React.FC = () => {
 
   const navigateTo = (page: Page, productId?: string) => {
     if (page === 'product' && productId) {
+      setIsProductLoading(true);
       setSelectedProductId(productId);
     }
     setCurrentPage(page);
   };
 
-  const handleAddToCart = async (productToAdd: Product, color: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('Please log in to add items to your cart.');
-      navigateTo('login');
-      return;
-    }
-    try {
-      const updatedCart = await addToCartAPI(
-        {
-          productId: productToAdd.id,
-          color: color,
-          quantity: 1, // Assuming we add one at a time
-        },
-        token,
+  const handleAddToCart = (productToAdd: Product, color: string) => {
+    setCart(prevCart => {
+      const existingItemIndex = prevCart.findIndex(
+        item => item.product.id === productToAdd.id && item.color === color
       );
-      setCart(updatedCart);
-      addToast('Added to cart!', { type: 'success', emoji: '🛒' });
-      navigateTo('cart');
-    } catch (error) {
-      console.error('Failed to add to cart:', error);
-      addToast('Failed to add item to cart.', { type: 'error' });
-    }
+
+      if (existingItemIndex > -1) {
+        const updatedCart = [...prevCart];
+        updatedCart[existingItemIndex].quantity += 1;
+        return updatedCart;
+      } else {
+        return [...prevCart, { product: productToAdd, quantity: 1, color }];
+      }
+    });
+    addToast('Added to cart!', { type: 'success', emoji: '🛒' });
+    navigateTo('cart');
   };
 
   const handleCartUpdate = (productId: string, color: string, newQuantity: number) => {
@@ -94,7 +97,9 @@ const AppContent: React.FC = () => {
       case 'cart':
         return <CartPage navigateTo={navigateTo} cart={cart} onCartUpdate={handleCartUpdate} />;
       case 'login':
-        return <LoginPage navigateTo={navigateTo} />;
+        return <BongoCatLoginPage navigateTo={navigateTo} onLoginSuccess={() => setIsLoggedIn(true)} />;
+      case 'register':
+        return <BongoCatRegisterPage navigateTo={navigateTo} />;
       case 'product':
         if (!selectedProduct) {
           // If no product is selected, go back to the home page.
@@ -109,7 +114,7 @@ const AppContent: React.FC = () => {
                   <ProductViewer 
                     images={selectedProduct.images} 
                     selectedColor={selectedColor} 
-                    onLoadingComplete={() => setIsAppLoading(false)}
+                    onLoadingComplete={() => setIsProductLoading(false)}
                   />
                 </div>
 
@@ -142,29 +147,31 @@ const AppContent: React.FC = () => {
 
   // Simplified loading logic for initial app start
   useEffect(() => {
-    const timer = setTimeout(() => setIsAppLoading(false), 1500);
+    const timer = setTimeout(() => setIsInitialAppLoad(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
-  if (isAppLoading) {
-    return <LoadingScreen />;
+  if (isInitialAppLoad) {
+    return <LoadingScreen text="Loading Experience..." />;
   }
 
 
   return (
     <>
-      {currentPage !== 'login' && (
+      {currentPage === 'login' || currentPage === 'register' ? (
+        <>
+          {currentPage === 'login' && <BongoCatLoginPage navigateTo={navigateTo} onLoginSuccess={() => setIsLoggedIn(true)} />}
+          {currentPage === 'register' && <BongoCatRegisterPage navigateTo={navigateTo} />}
+        </>
+      ) : (
         <div className="bg-slate-900 min-h-screen font-sans text-slate-200">
           <CursorFollower />
           <BackgroundAnimation />
-          <Header navigateTo={navigateTo} />
-          <main className="container mx-auto p-2 md:p-4 relative z-0">
+          <Header navigateTo={navigateTo} isLoggedIn={isLoggedIn} onLogout={() => setIsLoggedIn(false)} />
+          <main className="container mx-auto p-2 md:p-4 relative z-0 transition-opacity duration-300" style={{ opacity: isProductLoading ? 0.5 : 1 }}>
             {renderPage()}
           </main>
         </div>
-      )}
-      {currentPage === 'login' && (
-        <LoginPage navigateTo={navigateTo} />
       )}
     </>
   );
